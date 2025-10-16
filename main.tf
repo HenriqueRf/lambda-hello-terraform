@@ -7,7 +7,7 @@ terraform {
   }
 
   cloud {
-    organization = "SUA_ORGANIZACAO_TERRAFORM" # <-- substitua aqui
+    organization = "testess0102" 
     workspaces {
       name = "lambda-hello-world"
     }
