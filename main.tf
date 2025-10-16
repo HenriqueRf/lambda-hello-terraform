@@ -18,11 +18,6 @@ provider "aws" {
   region = var.aws_region
 }
 
-variable "aws_region" {
-  description = "AWS region"
-  default     = "us-east-1"
-}
-
 # IAM Role para a Lambda
 resource "aws_iam_role" "lambda_role" {
   name = "lambda_hello_world_role"
@@ -63,8 +58,4 @@ resource "aws_lambda_function" "hello_world" {
 
   filename         = data.archive_file.lambda_zip.output_path
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
-}
-
-output "lambda_function_name" {
-  value = aws_lambda_function.hello_world.function_name
 }
