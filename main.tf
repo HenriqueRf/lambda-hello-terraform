@@ -115,7 +115,7 @@ resource "aws_lambda_function" "hello_world" {
 resource "aws_cloudwatch_event_rule" "lambda_schedule" {
   name                = "lambda_daily_trigger"
   description         = "Executa a Lambda todos os dias às 13h (horário de Brasília)"
-  schedule_expression = "cron(0 16 * * ? *)"
+  schedule_expression = "cron(0 12 * * ? *)"
 }
 
 resource "aws_cloudwatch_event_target" "lambda_target" {
