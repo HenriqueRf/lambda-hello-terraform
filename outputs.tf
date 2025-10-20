@@ -4,6 +4,6 @@ output "lambda_function_name" {
 }
 
 output "s3_bucket_name" {
-  description = "Name of the S3 bucket that triggers the Lambda"
-  value       = aws_s3_bucket.event_bucket.bucket
+  description = "Name of the S3 bucket used to store Lambda logs"
+  value       = aws_s3_bucket.lambda_records.bucket
 }
