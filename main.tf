@@ -133,14 +133,3 @@ resource "aws_lambda_permission" "allow_eventbridge" {
   source_arn    = aws_cloudwatch_event_rule.lambda_schedule.arn
 }
 
-# =============================
-# OUTPUTS
-# =============================
-
-output "lambda_function_name" {
-  value = aws_lambda_function.hello_world.function_name
-}
-
-output "s3_bucket_name" {
-  value = aws_s3_bucket.lambda_records.bucket
-}
