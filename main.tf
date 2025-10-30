@@ -49,16 +49,16 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
 # S3 BUCKET para armazenar registros da Lambda
 # =============================
 
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
 resource "aws_s3_bucket" "lambda_records" {
   bucket = "lambda-records-${random_id.suffix.hex}"
+
   tags = {
     Name = "lambda-records"
   }
-}
-
-# Sufixo aleatório pro nome do bucket (S3 exige nomes únicos globalmente)
-resource "random_id" "suffix" {
-  byte_length = 4
 }
 
 # Permissão para a Lambda escrever no S3
@@ -115,13 +115,19 @@ resource "aws_lambda_function" "hello_world" {
 resource "aws_cloudwatch_event_rule" "lambda_schedule" {
   name                = "lambda_daily_trigger"
   description         = "Executa a Lambda todos os dias às 13h (horário de Brasília)"
-  schedule_expression = "cron(0 12 * * ? *)"
+  schedule_expression = "cron(0 16 * * ? *)"
 }
 
+# Alvo da regra: a Lambda
 resource "aws_cloudwatch_event_target" "lambda_target" {
   rule      = aws_cloudwatch_event_rule.lambda_schedule.name
   target_id = "lambda-scheduled"
   arn       = aws_lambda_function.hello_world.arn
+
+  # Garante que só será criado após a permissão de invocação da Lambda
+  depends_on = [
+    aws_lambda_permission.allow_eventbridge
+  ]
 }
 
 # Permissão para o EventBridge invocar a Lambda
@@ -133,3 +139,16 @@ resource "aws_lambda_permission" "allow_eventbridge" {
   source_arn    = aws_cloudwatch_event_rule.lambda_schedule.arn
 }
 
+# =============================
+# OUTPUTS
+# =============================
+
+output "lambda_function_name" {
+  description = "Nome da função Lambda criada"
+  value       = aws_lambda_function.hello_world.function_name
+}
+
+output "s3_bucket_name" {
+  description = "Nome do bucket S3 onde os registros são armazenados"
+  value       = aws_s3_bucket.lambda_records.bucket
+}
