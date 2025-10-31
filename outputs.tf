@@ -1,9 +1,19 @@
-output "lambda_function_name" {
-  description = "Nome da função Lambda criada"
-  value       = aws_lambda_function.hello_world.function_name
+output "lambda_1_name" {
+  description = "Nome da primeira Lambda"
+  value       = aws_lambda_function.lambda_1.function_name
 }
 
-output "s3_bucket_name" {
-  description = "Nome do bucket S3 onde os registros são armazenados"
-  value       = aws_s3_bucket.lambda_records.bucket
+output "lambda_2_name" {
+  description = "Nome da segunda Lambda"
+  value       = aws_lambda_function.lambda_2.function_name
+}
+
+output "lambda_1_arn" {
+  description = "ARN da Lambda 1"
+  value       = aws_lambda_function.lambda_1.arn
+}
+
+output "lambda_2_arn" {
+  description = "ARN da Lambda 2"
+  value       = aws_lambda_function.lambda_2.arn
 }
