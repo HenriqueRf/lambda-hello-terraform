@@ -19,11 +19,12 @@ provider "aws" {
 }
 
 # =============================
-# IAM ROLE e POLÍTICAS
+# IAM ROLES e POLÍTICAS
 # =============================
 
-resource "aws_iam_role" "lambda_role" {
-  name = "lambda_hello_world_role"
+# Role da Lambda 1
+resource "aws_iam_role" "lambda_role_1" {
+  name = "lambda_role_1"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -39,103 +40,126 @@ resource "aws_iam_role" "lambda_role" {
   })
 }
 
-# Permissão básica de logs
-resource "aws_iam_role_policy_attachment" "lambda_logs" {
-  role       = aws_iam_role.lambda_role.name
+resource "aws_iam_role_policy_attachment" "lambda_logs_1" {
+  role       = aws_iam_role.lambda_role_1.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-# =============================
-# S3 BUCKET para armazenar registros da Lambda
-# =============================
+# Role da Lambda 2
+resource "aws_iam_role" "lambda_role_2" {
+  name = "lambda_role_2"
 
-resource "random_id" "suffix" {
-  byte_length = 4
-}
-
-resource "aws_s3_bucket" "lambda_records" {
-  bucket = "lambda-records-${random_id.suffix.hex}"
-
-  tags = {
-    Name = "lambda-records"
-  }
-}
-
-# Permissão para a Lambda escrever no S3
-resource "aws_iam_policy" "lambda_s3_policy" {
-  name        = "lambda_s3_write_policy"
-  description = "Permite que a Lambda grave no bucket S3"
-  policy = jsonencode({
+  assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
+        Action = "sts:AssumeRole"
         Effect = "Allow"
-        Action = ["s3:PutObject"],
-        Resource = ["${aws_s3_bucket.lambda_records.arn}/*"]
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
       }
     ]
   })
 }
 
-resource "aws_iam_role_policy_attachment" "lambda_s3_policy_attach" {
-  role       = aws_iam_role.lambda_role.name
-  policy_arn = aws_iam_policy.lambda_s3_policy.arn
+resource "aws_iam_role_policy_attachment" "lambda_logs_2" {
+  role       = aws_iam_role.lambda_role_2.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
 # =============================
-# ARQUIVO E LAMBDA FUNCTION
+# ARQUIVOS DAS LAMBDAS
 # =============================
 
-data "archive_file" "lambda_zip" {
+data "archive_file" "lambda1_zip" {
   type        = "zip"
-  source_file = "${path.module}/lambda_function.py"
-  output_path = "${path.module}/lambda_function.zip"
+  source_file = "${path.module}/lambda_function_1.py"
+  output_path = "${path.module}/lambda_function_1.zip"
 }
 
-resource "aws_lambda_function" "hello_world" {
-  function_name = "hello_world_lambda"
-  role          = aws_iam_role.lambda_role.arn
-  handler       = "lambda_function.lambda_handler"
+data "archive_file" "lambda2_zip" {
+  type        = "zip"
+  source_file = "${path.module}/lambda_function_2.py"
+  output_path = "${path.module}/lambda_function_2.zip"
+}
+
+# =============================
+# LAMBDA 1
+# =============================
+
+resource "aws_lambda_function" "lambda_1" {
+  function_name = "lambda_1"
+  role          = aws_iam_role.lambda_role_1.arn
+  handler       = "lambda_function_1.lambda_handler"
   runtime       = "python3.9"
 
-  filename         = data.archive_file.lambda_zip.output_path
-  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
-
-  environment {
-    variables = {
-      BUCKET_NAME = aws_s3_bucket.lambda_records.bucket
-    }
-  }
+  filename         = data.archive_file.lambda1_zip.output_path
+  source_code_hash = data.archive_file.lambda1_zip.output_base64sha256
 }
 
 # =============================
-# TRIGGER: EXECUÇÃO AGENDADA (CRON 13h BRASÍLIA = 16h UTC)
+# LAMBDA 2
 # =============================
 
-resource "aws_cloudwatch_event_rule" "lambda_schedule" {
-  name                = "lambda_daily_trigger"
-  description         = "Executa a Lambda todos os dias às 13h (horário de Brasília)"
+resource "aws_lambda_function" "lambda_2" {
+  function_name = "lambda_2"
+  role          = aws_iam_role.lambda_role_2.arn
+  handler       = "lambda_function_2.lambda_handler"
+  runtime       = "python3.9"
+
+  filename         = data.archive_file.lambda2_zip.output_path
+  source_code_hash = data.archive_file.lambda2_zip.output_base64sha256
+}
+
+# =============================
+# EVENTBRIDGE - LAMBDA 1
+# =============================
+
+resource "aws_cloudwatch_event_rule" "lambda1_schedule" {
+  name                = "lambda1_daily_trigger"
+  description         = "Executa a Lambda 1 todos os dias às 13h (horário de Brasília)"
   schedule_expression = "cron(0 16 * * ? *)"
 }
 
-# Alvo da regra: a Lambda
-resource "aws_cloudwatch_event_target" "lambda_target" {
-  rule      = aws_cloudwatch_event_rule.lambda_schedule.name
-  target_id = "lambda-scheduled"
-  arn       = aws_lambda_function.hello_world.arn
+resource "aws_cloudwatch_event_target" "lambda1_target" {
+  rule      = aws_cloudwatch_event_rule.lambda1_schedule.name
+  target_id = "lambda1-scheduled"
+  arn       = aws_lambda_function.lambda_1.arn
 
-  # Garante que só será criado após a permissão de invocação da Lambda
-  depends_on = [
-    aws_lambda_permission.allow_eventbridge
-  ]
+  depends_on = [aws_lambda_permission.allow_eventbridge_lambda1]
 }
 
-# Permissão para o EventBridge invocar a Lambda
-resource "aws_lambda_permission" "allow_eventbridge" {
-  statement_id  = "AllowExecutionFromEventBridge"
+resource "aws_lambda_permission" "allow_eventbridge_lambda1" {
+  statement_id  = "AllowExecutionFromEventBridgeLambda1"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.hello_world.function_name
+  function_name = aws_lambda_function.lambda_1.function_name
   principal     = "events.amazonaws.com"
-  source_arn    = aws_cloudwatch_event_rule.lambda_schedule.arn
+  source_arn    = aws_cloudwatch_event_rule.lambda1_schedule.arn
 }
 
+# =============================
+# EVENTBRIDGE - LAMBDA 2
+# =============================
+
+resource "aws_cloudwatch_event_rule" "lambda2_schedule" {
+  name                = "lambda2_daily_trigger"
+  description         = "Executa a Lambda 2 todos os dias às 14h (horário de Brasília)"
+  schedule_expression = "cron(0 17 * * ? *)"
+}
+
+resource "aws_cloudwatch_event_target" "lambda2_target" {
+  rule      = aws_cloudwatch_event_rule.lambda2_schedule.name
+  target_id = "lambda2-scheduled"
+  arn       = aws_lambda_function.lambda_2.arn
+
+  depends_on = [aws_lambda_permission.allow_eventbridge_lambda2]
+}
+
+resource "aws_lambda_permission" "allow_eventbridge_lambda2" {
+  statement_id  = "AllowExecutionFromEventBridgeLambda2"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.lambda_2.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.lambda2_schedule.arn
+}
