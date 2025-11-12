@@ -74,13 +74,13 @@ resource "aws_iam_role_policy_attachment" "onevision_data_cleaner_policy" {
 
 data "archive_file" "data_collector_zip" {
   type        = "zip"
-  source_file = "${path.module}/index.py"
+  source_file = "${path.module}/lambda/collector/index.py"
   output_path = "${path.module}/OneVisionDataCollectorFunction.zip"
 }
 
 data "archive_file" "data_cleaner_zip" {
   type        = "zip"
-  source_file = "${path.module}/index.py"
+  source_file = "${path.module}/lambda/cleanner/index.py"
   output_path = "${path.module}/OneVisionDataCleanerFunction.zip"
 }
 
