@@ -74,13 +74,13 @@ resource "aws_iam_role_policy_attachment" "onevision_data_cleaner_policy" {
 
 data "archive_file" "data_collector_zip" {
   type        = "zip"
-  source_file = "${path.module}/lambda_function_1.py"
+  source_file = "${path.module}/index.py"
   output_path = "${path.module}/OneVisionDataCollectorFunction.zip"
 }
 
 data "archive_file" "data_cleaner_zip" {
   type        = "zip"
-  source_file = "${path.module}/lambda_function_2.py"
+  source_file = "${path.module}/index.py"
   output_path = "${path.module}/OneVisionDataCleanerFunction.zip"
 }
 
@@ -91,8 +91,8 @@ data "archive_file" "data_cleaner_zip" {
 resource "aws_lambda_function" "onevision_data_collector_function" {
   function_name = "OneVisionDataCollectorFunction"
   role          = aws_iam_role.onevision_data_collector_role.arn
-  handler       = "lambda_function_1.lambda_handler"
-  runtime       = "python3.9"
+  handler       = "index.lambda_handler"
+  runtime       = "python3.13"
 
   filename         = data.archive_file.data_collector_zip.output_path
   source_code_hash = data.archive_file.data_collector_zip.output_base64sha256
@@ -105,8 +105,8 @@ resource "aws_lambda_function" "onevision_data_collector_function" {
 resource "aws_lambda_function" "onevision_data_cleaner_function" {
   function_name = "OneVisionDataCleanerFunction"
   role          = aws_iam_role.onevision_data_cleaner_role.arn
-  handler       = "lambda_function_2.lambda_handler"
-  runtime       = "python3.9"
+  handler       = "index.lambda_handler"
+  runtime       = "python3.13"
 
   filename         = data.archive_file.data_cleaner_zip.output_path
   source_code_hash = data.archive_file.data_cleaner_zip.output_base64sha256
