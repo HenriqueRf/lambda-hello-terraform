@@ -72,12 +72,14 @@ resource "aws_iam_role_policy_attachment" "onevision_data_cleaner_policy" {
 # ARQUIVOS DAS LAMBDAS
 # =============================
 
+# ZIP CORRETO DA PASTA collector/
 data "archive_file" "data_collector_zip" {
   type        = "zip"
-  source_file = "${path.module}/lambda/collector/index.py"
+  source_dir  = "${path.module}/lambda/collector"
   output_path = "${path.module}/OneVisionDataCollectorFunction.zip"
 }
 
+# ZIP da Lambda cleaner
 data "archive_file" "data_cleaner_zip" {
   type        = "zip"
   source_file = "${path.module}/lambda/cleanner/index.py"
@@ -91,7 +93,7 @@ data "archive_file" "data_cleaner_zip" {
 resource "aws_lambda_function" "onevision_data_collector_function" {
   function_name = "OneVisionDataCollectorFunction"
   role          = aws_iam_role.onevision_data_collector_role.arn
-  handler       = "index.lambda_handler"
+  handler       = "collector.index.lambda_handler"
   runtime       = "python3.13"
 
   filename         = data.archive_file.data_collector_zip.output_path
@@ -119,7 +121,7 @@ resource "aws_lambda_function" "onevision_data_cleaner_function" {
 resource "aws_cloudwatch_event_rule" "onevision_data_collector_schedule" {
   name                = "OneVisionDataCollectorSchedule"
   description         = "Executa a função de coleta de dados diariamente às 13h (horário de Brasília)"
-  schedule_expression = "cron(0 16 * * ? *)"
+  schedule_expression = "cron(0 16 * * ? *)" # 16 UTC = 13 BRT
 }
 
 resource "aws_cloudwatch_event_target" "onevision_data_collector_target" {
