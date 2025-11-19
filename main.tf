@@ -75,7 +75,7 @@ resource "aws_iam_role_policy_attachment" "onevision_data_cleaner_policy" {
 # ZIP CORRETO DA PASTA collector/
 data "archive_file" "data_collector_zip" {
   type        = "zip"
-  source_dir  = "${path.module}/lambda/collector"
+  source_file = "${path.module}/lambda/collector.zip"
   output_path = "${path.module}/OneVisionDataCollectorFunction.zip"
 }
 
