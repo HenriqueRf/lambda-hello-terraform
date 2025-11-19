@@ -72,17 +72,15 @@ resource "aws_iam_role_policy_attachment" "onevision_data_cleaner_policy" {
 # ARQUIVOS DAS LAMBDAS
 # =============================
 
-# ZIP CORRETO DA PASTA collector/
 data "archive_file" "data_collector_zip" {
   type        = "zip"
-  source_dir = "${path.module}/lambda/OneVisionDataCollector"
+  source_dir  = "${path.module}/lambda/OneVisionDataCollector"
   output_path = "${path.module}/lambda/OneVisionDataCollector.zip"
 }
 
-# ZIP da Lambda cleaner
 data "archive_file" "data_cleaner_zip" {
   type        = "zip"
-  source_dir = "${path.module}/lambda/OneVisionDataCleaner"
+  source_dir  = "${path.module}/lambda/OneVisionDataCleaner"
   output_path = "${path.module}/lambda/OneVisionDataCleaner.zip"
 }
 
@@ -91,40 +89,43 @@ data "archive_file" "data_cleaner_zip" {
 # =============================
 
 resource "aws_lambda_function" "OneVisionDataCollectorFunction" {
-  function_name = "OneVisionDataCollectorFunction"
-  role          = aws_iam_role.OneVisionDataCollectorRole.arn
-  handler       = "index.lambda_handler"
+  function_name     = "OneVisionDataCollectorFunction"
+  role              = aws_iam_role.onevision_data_collector_role.arn
+  handler           = "index.lambda_handler"
 
-  filename      = data.archive_file.data_collector_zip.output_path
-  source_code_hash = data.archive_file.data_collector_zip.output_base64sha256
-  publish       = true
+  filename          = data.archive_file.data_collector_zip.output_path
+  source_code_hash  = data.archive_file.data_collector_zip.output_base64sha256
+  publish           = true
 }
+
 # =============================
 # LAMBDA 2 - Data Cleaner
 # =============================
 
 resource "aws_lambda_function" "OneVisionDataCleanerFunction" {
-  function_name = "OneVisionDataCleanerFunction"
-  role          = aws_iam_role.OneVisionDataCleanerRole.arn
-  handler       = "index.lambda_handler"
-  filename      = data.archive_file.data_cleaner_zip.output_path
-  source_code_hash = data.archive_file.data_cleaner_zip.output_base64sha256
-  publish       = true
+  function_name     = "OneVisionDataCleanerFunction"
+  role              = aws_iam_role.onevision_data_cleaner_role.arn
+  handler           = "index.lambda_handler"
+
+  filename          = data.archive_file.data_cleaner_zip.output_path
+  source_code_hash  = data.archive_file.data_cleaner_zip.output_base64sha256
+  publish           = true
 }
+
 # =============================
-# EVENTBRIDGE - LAMBDA 1 (Data Collector)
+# EVENTBRIDGE - LAMBDA 1
 # =============================
 
 resource "aws_cloudwatch_event_rule" "onevision_data_collector_schedule" {
   name                = "OneVisionDataCollectorSchedule"
-  description         = "Executa a função de coleta de dados diariamente às 13h (horário de Brasília)"
-  schedule_expression = "cron(0 16 * * ? *)" # 16 UTC = 13 BRT
+  description         = "Executa a função de coleta diariamente às 13h"
+  schedule_expression = "cron(0 16 * * ? *)"
 }
 
 resource "aws_cloudwatch_event_target" "onevision_data_collector_target" {
   rule      = aws_cloudwatch_event_rule.onevision_data_collector_schedule.name
   target_id = "OneVisionDataCollectorTarget"
-  arn       = aws_lambda_function.onevision_data_collector_function.arn
+  arn       = aws_lambda_function.OneVisionDataCollectorFunction.arn
 
   depends_on = [aws_lambda_permission.allow_eventbridge_data_collector]
 }
@@ -132,25 +133,25 @@ resource "aws_cloudwatch_event_target" "onevision_data_collector_target" {
 resource "aws_lambda_permission" "allow_eventbridge_data_collector" {
   statement_id  = "AllowExecutionFromEventBridgeDataCollector"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.onevision_data_collector_function.function_name
+  function_name = aws_lambda_function.OneVisionDataCollectorFunction.function_name
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.onevision_data_collector_schedule.arn
 }
 
 # =============================
-# EVENTBRIDGE - LAMBDA 2 (Data Cleaner)
+# EVENTBRIDGE - LAMBDA 2
 # =============================
 
 resource "aws_cloudwatch_event_rule" "onevision_data_cleaner_schedule" {
   name                = "OneVisionDataCleanerSchedule"
-  description         = "Executa a função de limpeza de dados diariamente às 14h (horário de Brasília)"
+  description         = "Executa a função de limpeza às 14h"
   schedule_expression = "cron(0 17 * * ? *)"
 }
 
 resource "aws_cloudwatch_event_target" "onevision_data_cleaner_target" {
   rule      = aws_cloudwatch_event_rule.onevision_data_cleaner_schedule.name
   target_id = "OneVisionDataCleanerTarget"
-  arn       = aws_lambda_function.onevision_data_cleaner_function.arn
+  arn       = aws_lambda_function.OneVisionDataCleanerFunction.arn
 
   depends_on = [aws_lambda_permission.allow_eventbridge_data_cleaner]
 }
@@ -158,7 +159,6 @@ resource "aws_cloudwatch_event_target" "onevision_data_cleaner_target" {
 resource "aws_lambda_permission" "allow_eventbridge_data_cleaner" {
   statement_id  = "AllowExecutionFromEventBridgeDataCleaner"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.onevision_data_cleaner_function.function_name
+  function_name = aws_lambda_function.OneVisionDataCleanerFunction.function_name
   principal     = "events.amazonaws.com"
-  source_arn    = aws_cloudwatch_event_rule.onevision_data_cleaner_schedule.arn
-}
+  source_arn    =_
