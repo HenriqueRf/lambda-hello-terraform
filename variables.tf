@@ -1,22 +1,31 @@
-# =============================
-# Variáveis principais
-# =============================
+# variable.tf
 
-variable "aws_region" {
+variable "region" {
   description = "Região AWS onde os recursos serão criados"
   type        = string
   default     = "sa-east-1"
 }
 
-# (Opcional) caso queira alterar os horários no futuro via variável
-variable "collector_cron_expression" {
-  description = "Agendamento da função OneVisionDataCollector (horário UTC)"
+variable "project_name" {
+  description = "Prefixo de nomes"
   type        = string
-  default     = "cron(0 16 * * ? *)" # 13h Brasília
+  default     = "eventbridge-lambda-schedules"
 }
 
-variable "cleaner_cron_expression" {
-  description = "Agendamento da função OneVisionDataCleaner (horário UTC)"
+variable "lambda_runtime" {
+  description = "Runtime das Lambdas"
   type        = string
-  default     = "cron(0 17 * * ? *)" # 14h Brasília
+  default     = "python3.13"
+}
+
+variable "lambda_timeout_seconds" {
+  description = "Timeout das Lambdas (segundos)"
+  type        = number
+  default     = 30
+}
+
+variable "lambda_memory_mb" {
+  description = "Memória das Lambdas (MB)"
+  type        = number
+  default     = 128
 }
