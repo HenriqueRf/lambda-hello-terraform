@@ -75,45 +75,42 @@ resource "aws_iam_role_policy_attachment" "onevision_data_cleaner_policy" {
 # ZIP CORRETO DA PASTA collector/
 data "archive_file" "data_collector_zip" {
   type        = "zip"
-  source_file = "${path.module}/lambdacollector/collector/index.py"
-  output_path = "${path.module}/OneVisionDataCollectorFunction.zip"
+  source_dir = "${path.module}/lambda/OneVisionDataCollector"
+  output_path = "${path.module}/lambda/OneVisionDataCollector.zip"
 }
 
 # ZIP da Lambda cleaner
 data "archive_file" "data_cleaner_zip" {
   type        = "zip"
-  source_file = "${path.module}/lambdacleanner/cleanner/index.py"
-  output_path = "${path.module}/OneVisionDataCleanerFunction.zip"
+  source_dir = "${path.module}/lambda/OneVisionDataCleaner"
+  output_path = "${path.module}/lambda/OneVisionDataCleaner.zip"
 }
 
 # =============================
 # LAMBDA 1 - Data Collector
 # =============================
 
-resource "aws_lambda_function" "onevision_data_collector_function" {
+resource "aws_lambda_function" "OneVisionDataCollectorFunction" {
   function_name = "OneVisionDataCollectorFunction"
-  role          = aws_iam_role.onevision_data_collector_role.arn
-  handler       = "collector.index.lambda_handler"
-  runtime       = "python3.13"
+  role          = aws_iam_role.OneVisionDataCollectorRole.arn
+  handler       = "index.lambda_handler"
 
-  filename         = data.archive_file.data_collector_zip.output_path
+  filename      = data.archive_file.data_collector_zip.output_path
   source_code_hash = data.archive_file.data_collector_zip.output_base64sha256
+  publish       = true
 }
-
 # =============================
 # LAMBDA 2 - Data Cleaner
 # =============================
 
-resource "aws_lambda_function" "onevision_data_cleaner_function" {
+resource "aws_lambda_function" "OneVisionDataCleanerFunction" {
   function_name = "OneVisionDataCleanerFunction"
-  role          = aws_iam_role.onevision_data_cleaner_role.arn
+  role          = aws_iam_role.OneVisionDataCleanerRole.arn
   handler       = "index.lambda_handler"
-  runtime       = "python3.13"
-
-  filename         = data.archive_file.data_cleaner_zip.output_path
+  filename      = data.archive_file.data_cleaner_zip.output_path
   source_code_hash = data.archive_file.data_cleaner_zip.output_base64sha256
+  publish       = true
 }
-
 # =============================
 # EVENTBRIDGE - LAMBDA 1 (Data Collector)
 # =============================
