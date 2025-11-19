@@ -139,13 +139,13 @@ resource "aws_lambda_permission" "allow_eventbridge_data_collector" {
 }
 
 # =============================
-# EVENTBRIDGE - LAMBDA 2
+# EVENTBRIDGE - LAMBDA 2 (Data Cleaner)
 # =============================
 
 resource "aws_cloudwatch_event_rule" "onevision_data_cleaner_schedule" {
   name                = "OneVisionDataCleanerSchedule"
-  description         = "Executa a função de limpeza às 14h"
-  schedule_expression = "cron(0 17 * * ? *)"
+  description         = "Executa a função de limpeza de dados diariamente às 14h (horário de Brasília)"
+  schedule_expression = var.cleaner_cron_expression
 }
 
 resource "aws_cloudwatch_event_target" "onevision_data_cleaner_target" {
@@ -161,4 +161,6 @@ resource "aws_lambda_permission" "allow_eventbridge_data_cleaner" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.OneVisionDataCleanerFunction.function_name
   principal     = "events.amazonaws.com"
-  source_arn    =_
+  source_arn    = aws_cloudwatch_event_rule.onevision_data_cleaner_schedule.arn
+}
+
