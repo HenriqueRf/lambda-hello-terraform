@@ -1,31 +1,69 @@
-#iam.tf
+# lambda.tf
 
-data "aws_iam_policy_document" "assume_lambda" {
-  statement {
-    actions = ["sts:AssumeRole"]
-    principals {
-      type        = "Service"
-      identifiers = ["lambda.amazonaws.com"]
+# Empacota os codigos Python em zips
+data "archive_file" "data_cleaner_zip" {
+  type        = "zip"
+  source_dir  = "${path.module}/lambda/OneVisionDataCleaner"
+  output_path = "${path.module}/lambda/OneVisionDataCleaner.zip"
+}
+
+data "archive_file" "data_collector_zip" {
+  type        = "zip"
+  source_dir  = "${path.module}/lambda/OneVisionDataCollector"
+  output_path = "${path.module}/lambda/OneVisionDataCollector.zip"
+}
+
+resource "aws_lambda_function" "OneVisionDataCleanerFunction" {
+  function_name    = "${local.resource_prefix}-data-cleaner"
+  role             = aws_iam_role.OneVisionDataCleanerRole.arn
+  handler          = "index.lambda_handler"
+  runtime          = var.lambda_runtime
+  filename         = data.archive_file.data_cleaner_zip.output_path
+  source_code_hash = data.archive_file.data_cleaner_zip.output_base64sha256
+  memory_size      = var.lambda_memory_mb
+  timeout          = var.lambda_timeout_seconds
+  publish          = true
+
+  environment {
+    variables = {
+      TRIGGER_TIME_BRT = var.data_cleaner_trigger_time_brt
     }
+  }
+
+  tags = {
+    Name = "${local.resource_prefix}-data-cleaner"
   }
 }
 
-resource "aws_iam_role" "OneVisionDataCleanerRole" {
-  name               = "OneVisionDataCleanerRole"
-  assume_role_policy = data.aws_iam_policy_document.assume_lambda.json
+resource "aws_lambda_function" "OneVisionDataCollectorFunction" {
+  function_name    = "${local.resource_prefix}-data-collector"
+  role             = aws_iam_role.OneVisionDataCollectorRole.arn
+  handler          = "index.lambda_handler"
+  runtime          = var.lambda_runtime
+  filename         = data.archive_file.data_collector_zip.output_path
+  source_code_hash = data.archive_file.data_collector_zip.output_base64sha256
+  memory_size      = var.lambda_memory_mb
+  timeout          = var.lambda_timeout_seconds
+  publish          = true
+
+  environment {
+    variables = {
+      TRIGGER_TIME_BRT = var.data_collector_trigger_time_brt
+    }
+  }
+
+  tags = {
+    Name = "${local.resource_prefix}-data-collector"
+  }
 }
 
-resource "aws_iam_role_policy_attachment" "OneVisionDataCleanerPolicy" {
-  role       = aws_iam_role.OneVisionDataCleanerRole.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+# Log Groups explicitos com retencao configuravel
+resource "aws_cloudwatch_log_group" "lg_a" {
+  name              = "/aws/lambda/${aws_lambda_function.OneVisionDataCleanerFunction.function_name}"
+  retention_in_days = var.cloudwatch_log_retention_days
 }
 
-resource "aws_iam_role" "OneVisionDataCollectorRole" {
-  name               = "OneVisionDataCollectorRole"
-  assume_role_policy = data.aws_iam_policy_document.assume_lambda.json
-}
-
-resource "aws_iam_role_policy_attachment" "OneVisionDataCollectorPolicy" {
-  role       = aws_iam_role.OneVisionDataCollectorRole.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+resource "aws_cloudwatch_log_group" "lg_b" {
+  name              = "/aws/lambda/${aws_lambda_function.OneVisionDataCollectorFunction.function_name}"
+  retention_in_days = var.cloudwatch_log_retention_days
 }

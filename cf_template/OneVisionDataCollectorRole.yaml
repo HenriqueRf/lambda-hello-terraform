@@ -1,0 +1,241 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'OneVision Workload Viewer Infrastructure - Linked Account Resources'
+
+Parameters:
+  ManagementAccountId:
+    Type: String
+    Description: AWS Account ID of the management account
+
+Resources:
+  OneVisionDataCollectorRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: OneVisionDataCollectorRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub arn:aws:iam::${ManagementAccountId}:role/OneVisionDataCollectorRole
+            Action: sts:AssumeRole
+
+      Policies:
+        - PolicyName: OneVisionDataCollectorPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  # Compute
+                  - "ec2:Describe*"
+                  - "ec2:Get*"
+                  - "ec2:List*"
+
+                  # Storage
+                  - "s3:Get*"
+                  - "s3:List*"
+                  - "s3:Describe*"
+                  - "ebs:List*"
+                  - "ebs:Get*"
+                  - "ebs:Describe*"
+                  - "elasticfilesystem:Describe*"
+                  - "elasticfilesystem:List*"
+                  - "fsx:Describe*"
+                  - "fsx:Get*"
+                  - "fsx:List*"
+                  - "backup:Describe*"
+                  - "backup:Get*"
+                  - "backup:List*"
+
+                  # Database
+                  - "rds:Describe*"
+                  - "rds:List*"
+                  - "rds:Get*"
+                  - "dynamodb:Describe*"
+                  - "dynamodb:List*"
+                  - "dynamodb:Get*"
+                  - "redshift:Describe*"
+                  - "redshift:Get*"
+                  - "redshift:List*"
+                  - "aurora:Describe*"
+                  - "aurora:Get*"
+                  - "aurora:List*"
+                  - "elasticache:Describe*"
+                  - "elasticache:Get*"
+                  - "elasticache:List*"
+
+                  # Networking
+                  - "vpc:Describe*"
+                  - "vpc:Get*"
+                  - "vpc:List*"
+                  - "elasticloadbalancing:Describe*"
+                  - "elasticloadbalancing:List*"
+                  - "route53:List*"
+                  - "route53:Get*"
+                  - "directconnect:Describe*"
+                  - "directconnect:Get*"
+                  - "directconnect:List*"
+                  - "autoscaling:Describe*"
+
+                  # Security
+                  - "iam:List*"
+                  - "iam:Get*"
+                  - "iam:Generate*"
+                  - "kms:List*"
+                  - "kms:Describe*"
+                  - "kms:Get*"
+                  - "securityhub:Describe*"
+                  - "securityhub:Get*"
+                  - "securityhub:List*"
+                  - "guardduty:Describe*"
+                  - "guardduty:Get*"
+                  - "guardduty:List*"
+                  - "secretsmanager:Describe*"
+                  - "secretsmanager:Get*"
+                  - "secretsmanager:List*"
+                  - "certificate-manager:Describe*"
+                  - "certificate-manager:Get*"
+                  - "certificate-manager:List*"
+
+                  # Monitoring & Management
+                  - "cloudwatch:Describe*"
+                  - "cloudwatch:Get*"
+                  - "cloudwatch:List*"
+                  - "cloudtrail:Describe*"
+                  - "cloudtrail:Get*"
+                  - "cloudtrail:List*"
+                  - "systems-manager:Describe*"
+                  - "systems-manager:Get*"
+                  - "systems-manager:List*"
+                  - "ssm:Describe*"
+                  - "ssm:Get*"
+                  - "ssm:List*"
+                  - "config:Describe*"
+                  - "config:Get*"
+                  - "config:List*"
+                  - "support:Describe*"
+                  - "trustedadvisor:Describe*"
+
+                  # Containers & Serverless
+                  - "lambda:List*"
+                  - "lambda:Get*"
+                  - "eks:Describe*"
+                  - "eks:List*"
+                  - "ecs:Describe*"
+                  - "ecs:List*"
+                  - "fargate:Describe*"
+                  - "fargate:Get*"
+                  - "fargate:List*"
+
+                  # Cost Management
+                  - "ce:Get*"
+                  - "ce:Describe*"
+                  - "cur:Describe*"
+
+                  # Service Quotas & Limits
+                  - "servicequotas:Get*"
+                  - "servicequotas:List*"
+
+                  # Tags
+                  - "tag:Get*"
+
+                  # Analytics
+                  - "athena:Describe*"
+                  - "athena:Get*"
+                  - "athena:List*"
+                  - "glue:Describe*"
+                  - "glue:Get*"
+                  - "glue:List*"
+
+                  # Machine Learning
+                  - "sagemaker:Describe*"
+                  - "sagemaker:Get*"
+                  - "sagemaker:List*"
+                  - "comprehend:Describe*"
+                  - "comprehend:Get*"
+                  - "comprehend:List*"
+
+                  # Application Integration
+                  - "sns:Describe*"
+                  - "sns:Get*"
+                  - "sns:List*"
+                  - "sqs:Describe*"
+                  - "sqs:Get*"
+                  - "sqs:List*"
+                  - "stepfunctions:Describe*"
+                  - "stepfunctions:Get*"
+                  - "stepfunctions:List*"
+                  - "eventbridge:Describe*"
+                  - "eventbridge:Get*"
+                  - "eventbridge:List*"
+
+                  # Developer Tools
+                  - "codebuild:Describe*"
+                  - "codebuild:Get*"
+                  - "codebuild:List*"
+                  - "codepipeline:Describe*"
+                  - "codepipeline:Get*"
+                  - "codepipeline:List*"
+                  - "codedeploy:Describe*"
+                  - "codedeploy:Get*"
+                  - "codedeploy:List*"
+
+                  # Media Services
+                  - "mediaconvert:Describe*"
+                  - "mediaconvert:Get*"
+                  - "mediaconvert:List*"
+                  - "mediapackage:Describe*"
+                  - "mediapackage:Get*"
+                  - "mediapackage:List*"
+
+                  # Internet of Things (IoT)
+                  - "iot:Describe*"
+                  - "iot:Get*"
+                  - "iot:List*"
+
+                  # Migration & Transfer
+                  - "datasync:Describe*"
+                  - "datasync:Get*"
+                  - "datasync:List*"
+                  - "snowball:Describe*"
+                  - "snowball:Get*"
+                  - "snowball:List*"
+
+                  # Additional Services
+                  - "opensearch:Describe*"
+                  - "opensearch:Get*"
+                  - "opensearch:List*"
+                  - "batch:Describe*"
+                  - "batch:Get*"
+                  - "batch:List*"
+                  - "mq:Describe*"
+                  - "mq:Get*"
+                  - "mq:List*"
+                  - "quicksight:Describe*"
+                  - "quicksight:Get*"
+                  - "quicksight:List*"
+                  - "workspaces:Describe*"
+                  - "workspaces:Get*"
+                  - "workspaces:List*"
+                  - "transfer:Describe*"
+                  - "transfer:Get*"
+                  - "transfer:List*"
+                  - "kinesis:Describe*"
+                  - "kinesis:Get*"
+                  - "kinesis:List*"
+                  - "apigateway:Describe*"
+                  - "apigateway:Get*"
+                  - "apigateway:List*"
+                  - "appsync:Describe*"
+                  - "appsync:Get*"
+                  - "appsync:List*"
+                  - "cloudformation:Describe*"
+                  - "cloudformation:Get*"
+                  - "cloudformation:List*"
+
+                Resource: '*'
+
+Outputs:
+  CrossAccountRoleArn:
+    Value: !GetAtt OneVisionDataCollectorRole.Arn
+    Description: ARN of the cross-account role for workload collection

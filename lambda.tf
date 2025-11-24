@@ -1,61 +1,69 @@
 # lambda.tf
 
-# Empacota os códigos Python em zips
+# Empacota os codigos Python em zips
 data "archive_file" "data_cleaner_zip" {
   type        = "zip"
-  source_dir = "${path.module}/lambda/OneVisionDataCleaner"
+  source_dir  = "${path.module}/lambda/OneVisionDataCleaner"
   output_path = "${path.module}/lambda/OneVisionDataCleaner.zip"
 }
 
 data "archive_file" "data_collector_zip" {
   type        = "zip"
-  source_dir = "${path.module}/lambda/OneVisionDataCollector"
+  source_dir  = "${path.module}/lambda/OneVisionDataCollector"
   output_path = "${path.module}/lambda/OneVisionDataCollector.zip"
 }
 
 resource "aws_lambda_function" "OneVisionDataCleanerFunction" {
-  function_name = "OneVisionDataCleanerFunction"
-  role          = aws_iam_role.OneVisionDataCleanerRole.arn
-  handler       = "index.lambda_handler"
-  runtime       = var.lambda_runtime
-  filename      = data.archive_file.data_cleaner_zip.output_path
+  function_name    = "${local.resource_prefix}-data-cleaner"
+  role             = aws_iam_role.OneVisionDataCleanerRole.arn
+  handler          = "index.lambda_handler"
+  runtime          = var.lambda_runtime
+  filename         = data.archive_file.data_cleaner_zip.output_path
   source_code_hash = data.archive_file.data_cleaner_zip.output_base64sha256
-  memory_size   = var.lambda_memory_mb
-  timeout       = var.lambda_timeout_seconds
-  publish       = true
+  memory_size      = var.lambda_memory_mb
+  timeout          = var.lambda_timeout_seconds
+  publish          = true
 
   environment {
     variables = {
-      TRIGGER_TIME_BRT = "08:50"
+      TRIGGER_TIME_BRT = var.data_cleaner_trigger_time_brt
     }
+  }
+
+  tags = {
+    Name = "${local.resource_prefix}-data-cleaner"
   }
 }
 
 resource "aws_lambda_function" "OneVisionDataCollectorFunction" {
-  function_name = "OneVisionDataCollectorFunction"
-  role          = aws_iam_role.OneVisionDataCollectorRole.arn
-  handler       = "index.lambda_handler"
-  runtime       = var.lambda_runtime
-  filename      = data.archive_file.data_collector_zip.output_path
+  function_name    = "${local.resource_prefix}-data-collector"
+  role             = aws_iam_role.OneVisionDataCollectorRole.arn
+  handler          = "index.lambda_handler"
+  runtime          = var.lambda_runtime
+  filename         = data.archive_file.data_collector_zip.output_path
   source_code_hash = data.archive_file.data_collector_zip.output_base64sha256
-  memory_size   = var.lambda_memory_mb
-  timeout       = var.lambda_timeout_seconds
-  publish       = true
+  memory_size      = var.lambda_memory_mb
+  timeout          = var.lambda_timeout_seconds
+  publish          = true
 
   environment {
     variables = {
-      TRIGGER_TIME_BRT = "09:00"
+      TRIGGER_TIME_BRT = var.data_collector_trigger_time_brt
     }
+  }
+
+  tags = {
+    Name = "${local.resource_prefix}-data-collector"
   }
 }
 
-# (Opcional) Log Groups explícitos com retenção
+# Log Groups explicitos com retencao configuravel
 resource "aws_cloudwatch_log_group" "lg_a" {
   name              = "/aws/lambda/${aws_lambda_function.OneVisionDataCleanerFunction.function_name}"
-  retention_in_days = 30
+  retention_in_days = var.cloudwatch_log_retention_days
 }
 
 resource "aws_cloudwatch_log_group" "lg_b" {
   name              = "/aws/lambda/${aws_lambda_function.OneVisionDataCollectorFunction.function_name}"
-  retention_in_days = 30
+  retention_in_days = var.cloudwatch_log_retention_days
 }

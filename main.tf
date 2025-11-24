@@ -1,12 +1,19 @@
 # main.tf
 
+locals {
+  resource_prefix = "${var.name_prefix}-${var.client_name}-${var.environment}"
+}
+
 provider "aws" {
   region = var.region
 
   default_tags {
     tags = {
-      Project   = var.project_name
-      ManagedBy = "Terraform"
+      Project     = var.project_name
+      ManagedBy   = "Terraform"
+      Environment = var.environment
+      Client      = var.client_name
+      NamePrefix  = local.resource_prefix
     }
   }
 }
